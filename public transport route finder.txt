@@ -1,0 +1,154 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+
+void printPath(map<string, string> &parent, string start, string end) {
+    vector<string> path;
+    string current = end;
+
+    while (current != start) {
+        path.push_back(current);
+        current = parent[current];
+    }
+    path.push_back(start);
+
+    reverse(path.begin(), path.end());
+
+    cout << "Path: ";
+    for (auto &node : path) cout << node << " ";
+    cout << "\nNumber of Stops: " << path.size() - 1 << endl;
+}
+
+
+void dijkstra(map<string, vector<pair<string, int>>> &graph, string start, string end) {
+    priority_queue<pair<int, string>, vector<pair<int, string>>, greater<>> pq;
+    map<string, int> dist;
+    map<string, string> parent;
+
+    for (auto &node : graph) dist[node.first] = INT_MAX;
+
+    dist[start] = 0;
+    pq.push({0, start});
+
+    while (!pq.empty()) {
+        auto top = pq.top(); pq.pop();
+        int currentDist = top.first;
+        string currentNode = top.second;
+
+        for (auto &neighbor : graph[currentNode]) {
+            string next = neighbor.first;
+            int weight = neighbor.second;
+
+            if (currentDist + weight < dist[next]) {
+                dist[next] = currentDist + weight;
+                parent[next] = currentNode;
+                pq.push({dist[next], next});
+            }
+        }
+    }
+
+    if (dist[end] == INT_MAX) {
+        cout << "No path found\n";
+        return;
+    }
+
+    cout << "Minimum Cost: " << dist[end] << endl;
+    printPath(parent, start, end);
+}
+
+
+void aStar(map<string, vector<pair<string, int>>> &graph,
+           map<string, int> &heuristic,
+           string start, string end) {
+
+    priority_queue<pair<int, string>, vector<pair<int, string>>, greater<>> pq;
+
+    map<string, int> gCost;
+    map<string, string> parent;
+
+    for (auto &node : graph) gCost[node.first] = INT_MAX;
+
+    gCost[start] = 0;
+    pq.push({heuristic[start], start});
+
+    while (!pq.empty()) {
+        auto top = pq.top(); pq.pop();
+        string current = top.second;
+
+        if (current == end) break;
+
+        for (auto &neighbor : graph[current]) {
+            string next = neighbor.first;
+            int weight = neighbor.second;
+
+            int newCost = gCost[current] + weight;
+
+            if (newCost < gCost[next]) {
+                gCost[next] = newCost;
+                parent[next] = current;
+
+                int fCost = newCost + heuristic[next];
+                pq.push({fCost, next});
+            }
+        }
+    }
+
+    if (gCost[end] == INT_MAX) {
+        cout << "No path found\n";
+        return;
+    }
+
+    cout << "Minimum Cost (A*): " << gCost[end] << endl;
+    printPath(parent, start, end);
+}
+
+
+int main() {
+    map<string, vector<pair<string, int>>> graph;
+
+   
+    graph["A"] = {{"B", 4}, {"C", 3}};
+    graph["B"] = {{"A", 4}, {"D", 5}, {"E", 2}};
+    graph["C"] = {{"A", 3}, {"F", 7}};
+    graph["D"] = {{"B", 5}, {"E", 1}, {"G", 6}};
+    graph["E"] = {{"B", 2}, {"D", 1}, {"H", 4}};
+    graph["F"] = {{"C", 7}, {"G", 2}};
+    graph["G"] = {{"D", 6}, {"F", 2}, {"H", 3}};
+    graph["H"] = {{"E", 4}, {"G", 3}};
+
+
+    map<string, int> heuristic = {
+        {"A", 10}, {"B", 8}, {"C", 7}, {"D", 5},
+        {"E", 3}, {"F", 6}, {"G", 2}, {"H", 0}
+    };
+
+    cout << "Available Stations: A B C D E F G H\n";
+
+    string start, end;
+    cout << "Enter Start: ";
+    cin >> start;
+    cout << "Enter Destination: ";
+    cin >> end;
+
+    if (graph.find(start) == graph.end() || graph.find(end) == graph.end()) {
+        cout << "Invalid station\n";
+        return 0;
+    }
+
+    cout << "\nChoose Algorithm:\n";
+    cout << "1. Dijkstra\n2. A*\nChoice: ";
+    int choice;
+    cin >> choice;
+
+    cout << endl;
+
+    if (choice == 1) {
+        dijkstra(graph, start, end);
+    } else if (choice == 2) {
+        aStar(graph, heuristic, start, end);
+    } else {
+        cout << "Invalid choice\n";
+    }
+
+    return 0;
+}
